@@ -5,6 +5,7 @@ applications and libraries for the Android platform.
 
 ### Features
 
+ - Downloads are verified using MD5 and stored in a local cache.
  - Compilation can be interrupted at nearly any point and resumed later.
  - Dependencies are handled correctly, ensuring that packages that depend on
    another package are built after the dependencies.
