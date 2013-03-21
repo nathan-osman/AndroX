@@ -16,6 +16,8 @@ The list of applications and libraries currently supported includes:
 
  - [OpenSSL](http://www.openssl.org/) - toolkit for SSL / TLS
  - [cURL](http://curl.haxx.se/) - multiprotocol file transfer utility
+ - [libiconv](http://www.gnu.org/software/libiconv/) - character encoding
+   conversion library
  - [Git](http://git-scm.com/) - distributed version control system
 
 ### Usage
