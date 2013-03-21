@@ -19,6 +19,12 @@ The list of applications and libraries currently supported includes:
 
 ### Usage
 
+You will first need to grab a copy of the
+[Android NDK](http://developer.android.com/tools/sdk/ndk/index.html). Follow the
+instructions in the `docs/STANDALONE-TOOLCHAIN.HTML` file to create a standalone
+toolchain. Next, add the `bin/` directory of the standalone toolchain you
+created to `$PATH`. Now you are all set!
+
 If you are ambitious and wish to build all of the supported packages for
 Android, then simply run:
 
