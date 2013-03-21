@@ -12,10 +12,6 @@ define configure-$(PACKAGE)
 endef
 
 define build-$(PACKAGE)
-	make CC="$(HOST)-gcc" AR="$(HOST)-ar r" RANLIB="$(HOST)-ranlib"
+	make CC="$(HOST)-gcc" AR="$(HOST)-ar r" RANLIB="$(HOST)-ranlib"; \
 	make install
-endef
-
-define clean-$(PACKAGE)
-	test -f Makefile && make clean
 endef

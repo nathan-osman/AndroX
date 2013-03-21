@@ -68,25 +68,31 @@ $(VAR_DIR)/$(1)-configured: $(VAR_DIR)/$(1)-extracted
 	@cd '$(BUILD_DIR)/$($(1)_ARCHIVE)' ; $(call configure-$(1))
 	@touch '$(VAR_DIR)/$(1)-configured'
 
-# Executes all dependencies.
-.PHONY: $(1)
-$(1): $($(1)_DEPENDENCIES) $(VAR_DIR)/$(1)-configured
+# Rule for building the package.
+$(VAR_DIR)/$(1)-built: $(VAR_DIR)/$(1)-configured
 	@echo "$(YELLOW)Building $($(1)_NAME)...$(RESET)"
 	@cd '$(BUILD_DIR)/$($(1)_ARCHIVE)' ; $(call build-$(1))
+	@touch '$(VAR_DIR)/$(1)-built'
+
+# Executes all dependencies.
+.PHONY: $(1)
+$(1): $($(1)_DEPENDENCIES) $(VAR_DIR)/$(1)-built
+	@echo "$(GREEN)$($(1)_NAME) is built$(RESET)"
 
 # Cleans the package build files.
 .PHONY: clean-$(1)
 clean-$(1):
 	@echo "$(YELLOW)Cleaning $($(1)_NAME)...$(RESET)"
-	@cd '$(BUILD_DIR)/$($(1)_ARCHIVE)' ; $(call clean-$(1))
+	@cd '$(BUILD_DIR)/$($(1)_ARCHIVE)' ; test -f Makefile && make clean
 
 # Destroys all files downloaded and created by the package.
 .PHONY: purge-$(1)
 purge-$(1):
 	@echo "$(RED)Purging $($(1)_NAME)...$(RESET)"
-	@rm -f '$(VAR_DIR)/$(1)-configured'
-	@rm -f '$(VAR_DIR)/$(1)-extracted'
-	@rm -rf '$($(1)_ARCHIVE)'
+	@rm -f '$(VAR_DIR)/$(1)-built' \
+	       '$(VAR_DIR)/$(1)-configured' \
+	       '$(VAR_DIR)/$(1)-extracted'
+	@rm -rf '$(BUILD_DIR)/$($(1)_ARCHIVE)'
 	@rm -f '$($(1)_FILE)'
 
 endef
