@@ -6,7 +6,7 @@ $(PACKAGE)_NAME         := Git
 $(PACKAGE)_VERSION      := 1.8.2
 $(PACKAGE)_REQUIREMENTS := autoconf
 $(PACKAGE)_DEPENDENCIES := openssl curl
-$(PACKAGE)_PATH         := http://git-core.googlecode.com/files/
+$(PACKAGE)_PATH         := http://git-core.googlecode.com/files
 $(PACKAGE)_MD5          := 210834d73c857931c3da34a65eb3e597
 
 define configure-$(PACKAGE)
