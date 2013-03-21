@@ -16,6 +16,10 @@ define configure-$(PACKAGE)
 	#	ac_cv_snprintf_returns_bogus=no
 endef
 
-define make-$(PACKAGE)
-	make NO_NSEC=1
+define build-$(PACKAGE)
+	#make NO_NSEC=1
+endef
+
+define clean-$(PACKAGE)
+	# implement clean somehow
 endef

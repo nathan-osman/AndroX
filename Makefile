@@ -3,8 +3,10 @@
 #=========================================
 
 # Settings that determine how things work.
-CACHE_DIR = cache
-VAR_DIR   = var
+BUILD_DIR   = build
+CACHE_DIR   = cache
+INSTALL_DIR = install
+VAR_DIR     = var
 
 # Color-changing utility variables.
 RED    = `echo -n "\033[1;31m"`
@@ -28,9 +30,10 @@ all: $(PACKAGES)
 clean: $(addprefix clean-,$(PACKAGES))
 	@echo "$(GREEN)All packages cleaned$(RESET)"
 
-# Rule to purge all targets.
+# Rule to purge all targets and directories.
 .PHONY: purge
 purge: $(addprefix purge-,$(PACKAGES))
+	@rm -rf $(BUILD_DIR) $(CACHE_DIR) $(INSTALL_DIR) $(VAR_DIR)
 	@echo "$(GREEN)All packages purged$(RESET)"
 
 # Creates appropriate rules for the specified package that download, configure, build, etc.
@@ -50,25 +53,28 @@ $($(1)_FILE):
 # Rule for extracting the archive contents.
 $(VAR_DIR)/$(1)-extracted: $($(1)_FILE)
 	@echo "$(YELLOW)Extracting '$($(1)_FILE)'...$(RESET)"
-	@tar -xf $($(1)_FILE)
+	@mkdir -p $(BUILD_DIR)
+	@cd $(BUILD_DIR) ; tar -xf ../$($(1)_FILE)
 	@mkdir -p $(VAR_DIR)
 	@touch $(VAR_DIR)/$(1)-extracted
 
 # Rule for configuring the package.
 $(VAR_DIR)/$(1)-configured: $(VAR_DIR)/$(1)-extracted
 	@echo "$(YELLOW)Configuring $($(1)_NAME)...$(RESET)"
-	@cd $($(1)_ARCHIVE) ; $(call configure-$(1))
+	@cd $(BUILD_DIR)/$($(1)_ARCHIVE) ; $(call configure-$(1))
 	@touch $(VAR_DIR)/$(1)-configured
 
 # Executes all dependencies.
 .PHONY: $(1)
 $(1): $($(1)_DEPENDENCIES) $(VAR_DIR)/$(1)-configured
-	@echo "$(YELLOW)Finished building $($(1)_NAME)$(RESET)"
+	@echo "$(YELLOW)Building $($(1)_NAME)...$(RESET)"
+	@cd $(BUILD_DIR)/$($(1)_ARCHIVE) ; $(call build-$(1))
 
 # Cleans the package build files.
 .PHONY: clean-$(1)
 clean-$(1):
 	@echo "$(YELLOW)Cleaning $($(1)_NAME)...$(RESET)"
+	@cd $(BUILD_DIR)/$($(1)_ARCHIVE) ; $(call clean-$(1))
 
 # Destroys all files downloaded and created by the package.
 .PHONY: purge-$(1)
