@@ -23,5 +23,5 @@ define configure-$(PACKAGE)
 endef
 
 define build-$(PACKAGE)
-	make NO_NSEC=1 ; make
+	make install NO_NSEC=1
 endef

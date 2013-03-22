@@ -15,5 +15,5 @@ define configure-$(PACKAGE)
 endef
 
 define build-$(PACKAGE)
-	make ; make install
+	make install
 endef

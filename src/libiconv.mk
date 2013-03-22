@@ -14,6 +14,7 @@ define configure-$(PACKAGE)
 	cp '$(SRC_DIR)/config/config.sub' libcharset/build-aux; \
 	./configure --prefix='$(INSTALL_DIR)' \
 	            --host=$(HOST) \
+	            --enable-static \
 	            gl_cv_header_working_stdint_h=yes
 endef
 
