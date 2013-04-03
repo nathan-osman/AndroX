@@ -78,3 +78,17 @@
  	buffer_put_cstring(m, pwent->pw_class);
  #endif
 
+=== modified file 'monitor_wrap.c'
+--- monitor_wrap.c	2013-04-03 20:14:57 +0000
++++ monitor_wrap.c	2013-04-03 21:43:03 +0000
+@@ -259,7 +259,9 @@
+ 		fatal("%s: struct passwd size mismatch", __func__);
+ 	pw->pw_name = buffer_get_string(&m, NULL);
+ 	pw->pw_passwd = buffer_get_string(&m, NULL);
++#ifdef HAVE_PW_GECOS_IN_PASSWD
+ 	pw->pw_gecos = buffer_get_string(&m, NULL);
++#endif
+ #ifdef HAVE_PW_CLASS_IN_PASSWD
+ 	pw->pw_class = buffer_get_string(&m, NULL);
+ #endif
+
