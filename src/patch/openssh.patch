@@ -1,7 +1,32 @@
+=== modified file 'auth.c'
+--- auth.c	2013-04-03 20:14:57 +0000
++++ auth.c	2013-04-03 21:35:18 +0000
+@@ -721,7 +721,9 @@
+ 	fake.pw_name = "NOUSER";
+ 	fake.pw_passwd =
+ 	    "$2a$06$r3.juUaHZDlIbQaO2dS9FuYxL1W9M81R1Tc92PoSNmzvpEqLkLGrK";
++#ifdef HAVE_PW_GECOS_IN_PASSWD
+ 	fake.pw_gecos = "NOUSER";
++#endif
+ 	fake.pw_uid = privsep_pw == NULL ? (uid_t)-1 : privsep_pw->pw_uid;
+ 	fake.pw_gid = privsep_pw == NULL ? (gid_t)-1 : privsep_pw->pw_gid;
+ #ifdef HAVE_PW_CLASS_IN_PASSWD
+
 === modified file 'configure.ac'
 --- configure.ac	2013-04-03 20:14:57 +0000
-+++ configure.ac	2013-04-03 20:20:41 +0000
-@@ -3341,6 +3341,19 @@
++++ configure.ac	2013-04-03 21:31:40 +0000
+@@ -482,6 +482,10 @@
+ 	AC_DEFINE([PTY_ZEROREAD], [1], [read(1) can return 0 for a non-closed fd])
+ 	AC_DEFINE([PLATFORM_SYS_DIR_UID], 2, [System dirs owned by bin (uid 2)])
+ 	;;
++*-*-androideabi*)
++	AC_DEFINE([MISSING_FD_MASK], [1], [Define on *androideabi systems])
++	AC_DEFINE([MISSING_HOWMANY], [1], [Define on *androideabi systems])
++	;;
+ *-*-cygwin*)
+ 	check_for_libcrypt_later=1
+ 	LIBS="$LIBS /usr/lib/textreadmode.o"
+@@ -3341,6 +3345,19 @@
  		[Fields in struct sockaddr_storage])
  fi
  
@@ -37,5 +62,19 @@
 +#endif
  #ifdef HAVE_PW_EXPIRE_IN_PASSWD
  	copy->pw_expire = pw->pw_expire;
+ #endif
+
+=== modified file 'monitor.c'
+--- monitor.c	2013-04-03 20:14:57 +0000
++++ monitor.c	2013-04-03 21:39:24 +0000
+@@ -778,7 +778,9 @@
+ 	buffer_put_string(m, pwent, sizeof(struct passwd));
+ 	buffer_put_cstring(m, pwent->pw_name);
+ 	buffer_put_cstring(m, "*");
++#ifdef HAVE_PW_GECOS_IN_PASSWD
+ 	buffer_put_cstring(m, pwent->pw_gecos);
++#endif
+ #ifdef HAVE_PW_CLASS_IN_PASSWD
+ 	buffer_put_cstring(m, pwent->pw_class);
  #endif
 
