@@ -1,0 +1,41 @@
+=== modified file 'configure.ac'
+--- configure.ac	2013-04-03 20:14:57 +0000
++++ configure.ac	2013-04-03 20:20:41 +0000
+@@ -3341,6 +3341,19 @@
+ 		[Fields in struct sockaddr_storage])
+ fi
+ 
++AC_CACHE_CHECK([for pw_gecos field in struct passwd],
++		ac_cv_have_pw_gecos_in_struct_passwd, [
++	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ #include <pwd.h> ]],
++	[[ struct passwd p; p.pw_gecos = 0; ]])],
++	[ ac_cv_have_pw_gecos_in_struct_passwd="yes" ],
++	[ ac_cv_have_pw_gecos_in_struct_passwd="no"
++	])
++])
++if test "x$ac_cv_have_pw_gecos_in_struct_passwd" = "xyes" ; then
++	AC_DEFINE([HAVE_PW_GECOS_IN_PASSWD], [1],
++		[Define if your password has a pg_gecos field])
++fi
++
+ AC_CACHE_CHECK([for pw_class field in struct passwd],
+ 		ac_cv_have_pw_class_in_struct_passwd, [
+ 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ #include <pwd.h> ]],
+
+=== modified file 'misc.c'
+--- misc.c	2013-04-03 20:14:57 +0000
++++ misc.c	2013-04-03 20:22:07 +0000
+@@ -206,9 +206,11 @@
+ 
+ 	copy->pw_name = xstrdup(pw->pw_name);
+ 	copy->pw_passwd = xstrdup(pw->pw_passwd);
+-	copy->pw_gecos = xstrdup(pw->pw_gecos);
+ 	copy->pw_uid = pw->pw_uid;
+ 	copy->pw_gid = pw->pw_gid;
++#ifdef HAVE_PW_GECOS_IN_PASSWD
++	copy->pw_gecos = xstrdup(pw->pw_gecos);
++#endif
+ #ifdef HAVE_PW_EXPIRE_IN_PASSWD
+ 	copy->pw_expire = pw->pw_expire;
+ #endif
+
