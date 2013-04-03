@@ -14,20 +14,30 @@
 
 === modified file 'configure.ac'
 --- configure.ac	2013-04-03 20:14:57 +0000
-+++ configure.ac	2013-04-03 22:14:13 +0000
-@@ -482,6 +482,11 @@
++++ configure.ac	2013-04-03 23:39:53 +0000
+@@ -482,6 +482,13 @@
  	AC_DEFINE([PTY_ZEROREAD], [1], [read(1) can return 0 for a non-closed fd])
  	AC_DEFINE([PLATFORM_SYS_DIR_UID], 2, [System dirs owned by bin (uid 2)])
  	;;
 +*-*-androideabi*)
 +	AC_DEFINE([MISSING_FD_MASK], [1], [Define on *androideabi systems])
 +	AC_DEFINE([MISSING_HOWMANY], [1], [Define on *androideabi systems])
-+	AC_DEFINE([DISABLE_UTMP], [1], [Define if you don't want to use utmp])
++	#AC_DEFINE([DISABLE_UTMP], [1], [Define if you don't want to use utmp])
++	#AC_DEFINE([DISABLE_UTMPX], [1], [Define if you don't want to use utmpx])
++	#AC_DEFINE([DISABLE_WTMP], [1], [Define if you don't want to use wtmp])
 +	;;
  *-*-cygwin*)
  	check_for_libcrypt_later=1
  	LIBS="$LIBS /usr/lib/textreadmode.o"
-@@ -3341,6 +3346,19 @@
+@@ -1524,6 +1531,7 @@
+ 	clock \
+ 	closefrom \
+ 	dirfd \
++	endgrent \
+ 	fchmod \
+ 	fchown \
+ 	freeaddrinfo \
+@@ -3341,6 +3349,19 @@
  		[Fields in struct sockaddr_storage])
  fi
  
@@ -47,6 +57,22 @@
  AC_CACHE_CHECK([for pw_class field in struct passwd],
  		ac_cv_have_pw_class_in_struct_passwd, [
  	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ #include <pwd.h> ]],
+
+=== modified file 'defines.h'
+--- defines.h	2013-04-03 20:14:57 +0000
++++ defines.h	2013-04-03 23:35:32 +0000
+@@ -714,6 +714,11 @@
+ #if defined(HAVE_LOGIN) && !defined(DISABLE_LOGIN)
+ #  define USE_LOGIN
+ 
++/* Android does not define DEAD_PROCESS */
++#ifndef DEAD_PROCESS
++# define DEAD_PROCESS 8
++#endif
++
+ #else
+ /* Simply select your favourite login types. */
+ /* Can't do if-else because some systems use several... <sigh> */
 
 === modified file 'misc.c'
 --- misc.c	2013-04-03 20:14:57 +0000
@@ -92,4 +118,19 @@
  #ifdef HAVE_PW_CLASS_IN_PASSWD
  	pw->pw_class = buffer_get_string(&m, NULL);
  #endif
+
+=== modified file 'session.c'
+--- session.c	2013-04-03 20:14:57 +0000
++++ session.c	2013-04-03 23:43:43 +0000
+@@ -1499,8 +1499,10 @@
+ 			perror("initgroups");
+ 			exit(1);
+ 		}
++#ifdef HAVE_ENDGRENT
+ 		endgrent();
+ #endif
++#endif
+ 
+ 		platform_setusercontext_post_groups(pw);
+ 
 
