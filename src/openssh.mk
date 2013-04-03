@@ -11,7 +11,9 @@ $(PACKAGE)_MD5          := 7b2d9dd75b5cf267ea1737ec75500316
 define configure-$(PACKAGE)
 	./configure --prefix='$(INSTALL_DIR)' \
 		    --host=$(HOST) \
-		    --with-ssl-dir='$(INSTALL_DIR)'
+		    --with-ssl-dir='$(INSTALL_DIR)' \
+		    ac_cv_search_getrrsetbyname=yes \
+		    ac_cv_header_sys_un_h=yes
 endef
 
 define build-$(PACKAGE)
