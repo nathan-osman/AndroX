@@ -1,0 +1,280 @@
+=== modified file 'auth.c'
+--- auth.c	2013-05-31 05:56:58 +0000
++++ auth.c	2013-05-31 06:02:59 +0000
+@@ -721,10 +721,12 @@
+ 	fake.pw_name = "NOUSER";
+ 	fake.pw_passwd =
+ 	    "$2a$06$r3.juUaHZDlIbQaO2dS9FuYxL1W9M81R1Tc92PoSNmzvpEqLkLGrK";
++#ifdef HAVE_STRUCT_PASSWD_PW_GECOS
+ 	fake.pw_gecos = "NOUSER";
++#endif
+ 	fake.pw_uid = privsep_pw == NULL ? (uid_t)-1 : privsep_pw->pw_uid;
+ 	fake.pw_gid = privsep_pw == NULL ? (gid_t)-1 : privsep_pw->pw_gid;
+-#ifdef HAVE_PW_CLASS_IN_PASSWD
++#ifdef HAVE_STRUCT_PASSWD_PW_CLASS
+ 	fake.pw_class = "";
+ #endif
+ 	fake.pw_dir = "/nonexist";
+
+=== modified file 'configure.ac'
+--- configure.ac	2013-05-31 05:56:58 +0000
++++ configure.ac	2013-05-31 06:03:47 +0000
+@@ -974,9 +974,6 @@
+ *-*-nto-qnx*)
+ 	AC_DEFINE([USE_PIPES])
+ 	AC_DEFINE([NO_X11_UNIX_SOCKETS])
+-	AC_DEFINE([MISSING_NFDBITS], [1], [Define on *nto-qnx systems])
+-	AC_DEFINE([MISSING_HOWMANY], [1], [Define on *nto-qnx systems])
+-	AC_DEFINE([MISSING_FD_MASK], [1], [Define on *nto-qnx systems])
+ 	AC_DEFINE([DISABLE_LASTLOG])
+ 	AC_DEFINE([SSHD_ACQUIRES_CTTY])
+ 	AC_DEFINE([BROKEN_SHADOW_EXPIRE], [1], [QNX shadow support is broken])
+@@ -997,7 +994,6 @@
+ 
+ *-*-lynxos)
+         CFLAGS="$CFLAGS -D__NO_INCLUDE_WARN__"
+-	AC_DEFINE([MISSING_HOWMANY])
+         AC_DEFINE([BROKEN_SETVBUF], [1], [LynxOS has broken setvbuf() implementation])
+         ;;
+ esac
+@@ -1524,6 +1520,7 @@
+ 	clock \
+ 	closefrom \
+ 	dirfd \
++	endgrent \
+ 	fchmod \
+ 	fchown \
+ 	freeaddrinfo \
+@@ -1695,6 +1692,37 @@
+ #include <stddef.h>
+ 	])
+ 
++# extra bits for select(2)
++AC_CHECK_DECLS([howmany, NFDBITS], [], [], [[
++#include <sys/param.h>
++#include <sys/types.h>
++#ifdef HAVE_SYS_SYSMACROS_H
++#include <sys/sysmacros.h>
++#endif
++#ifdef HAVE_SYS_SELECT_H
++#include <sys/select.h>
++#endif
++#ifdef HAVE_SYS_TIME_H
++#include <sys/time.h>
++#endif
++#ifdef HAVE_UNISTD_H
++#include <unistd.h>
++#endif
++	]])
++AC_CHECK_TYPES([fd_mask], [], [], [[
++#include <sys/param.h>
++#include <sys/types.h>
++#ifdef HAVE_SYS_SELECT_H
++#include <sys/select.h>
++#endif
++#ifdef HAVE_SYS_TIME_H
++#include <sys/time.h>
++#endif
++#ifdef HAVE_UNISTD_H
++#include <unistd.h>
++#endif
++	]])
++
+ AC_CHECK_FUNCS([setresuid], [
+ 	dnl Some platorms have setresuid that isn't implemented, test for this
+ 	AC_MSG_CHECKING([if setresuid seems to work])
+@@ -3301,9 +3329,16 @@
+ OSSH_CHECK_HEADER_FOR_FIELD([ut_tv], [utmpx.h], [HAVE_TV_IN_UTMPX])
+ 
+ AC_CHECK_MEMBERS([struct stat.st_blksize])
++AC_CHECK_MEMBERS([struct passwd.pw_gecos, struct passwd.pw_class,
++struct passwd.pw_change, struct passwd.pw_expire],
++[], [], [[
++#include <sys/types.h>
++#include <pwd.h>
++]])
++
+ AC_CHECK_MEMBER([struct __res_state.retrans], [], [AC_DEFINE([__res_state], [state],
+ 	[Define if we don't have struct __res_state in resolv.h])],
+-[
++[[
+ #include <stdio.h>
+ #if HAVE_SYS_TYPES_H
+ # include <sys/types.h>
+@@ -3311,7 +3346,7 @@
+ #include <netinet/in.h>
+ #include <arpa/nameser.h>
+ #include <resolv.h>
+-])
++]])
+ 
+ AC_CACHE_CHECK([for ss_family field in struct sockaddr_storage],
+ 		ac_cv_have_ss_family_in_struct_ss, [
+@@ -3341,45 +3376,6 @@
+ 		[Fields in struct sockaddr_storage])
+ fi
+ 
+-AC_CACHE_CHECK([for pw_class field in struct passwd],
+-		ac_cv_have_pw_class_in_struct_passwd, [
+-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ #include <pwd.h> ]],
+-	[[ struct passwd p; p.pw_class = 0; ]])],
+-	[ ac_cv_have_pw_class_in_struct_passwd="yes" ],
+-	[ ac_cv_have_pw_class_in_struct_passwd="no" 
+-	])
+-])
+-if test "x$ac_cv_have_pw_class_in_struct_passwd" = "xyes" ; then
+-	AC_DEFINE([HAVE_PW_CLASS_IN_PASSWD], [1],
+-		[Define if your password has a pw_class field])
+-fi
+-
+-AC_CACHE_CHECK([for pw_expire field in struct passwd],
+-		ac_cv_have_pw_expire_in_struct_passwd, [
+-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ #include <pwd.h> ]],
+-	[[ struct passwd p; p.pw_expire = 0; ]])],
+-	[ ac_cv_have_pw_expire_in_struct_passwd="yes" ],
+-	[ ac_cv_have_pw_expire_in_struct_passwd="no" 
+-	])
+-])
+-if test "x$ac_cv_have_pw_expire_in_struct_passwd" = "xyes" ; then
+-	AC_DEFINE([HAVE_PW_EXPIRE_IN_PASSWD], [1],
+-		[Define if your password has a pw_expire field])
+-fi
+-
+-AC_CACHE_CHECK([for pw_change field in struct passwd],
+-		ac_cv_have_pw_change_in_struct_passwd, [
+-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ #include <pwd.h> ]],
+-	[[ struct passwd p; p.pw_change = 0; ]])],
+-	[ ac_cv_have_pw_change_in_struct_passwd="yes" ],
+-	[ ac_cv_have_pw_change_in_struct_passwd="no" 
+-	])
+-])
+-if test "x$ac_cv_have_pw_change_in_struct_passwd" = "xyes" ; then
+-	AC_DEFINE([HAVE_PW_CHANGE_IN_PASSWD], [1],
+-		[Define if your password has a pw_change field])
+-fi
+-
+ dnl make sure we're using the real structure members and not defines
+ AC_CACHE_CHECK([for msg_accrights field in struct msghdr],
+ 		ac_cv_have_accrights_in_msghdr, [
+
+=== modified file 'defines.h'
+--- defines.h	2013-05-31 05:56:58 +0000
++++ defines.h	2013-05-31 06:03:47 +0000
+@@ -171,11 +171,6 @@
+ # define MAP_FAILED ((void *)-1)
+ #endif
+ 
+-/* *-*-nto-qnx doesn't define this constant in the system headers */
+-#ifdef MISSING_NFDBITS
+-# define	NFDBITS (8 * sizeof(unsigned long))
+-#endif
+-
+ /*
+ SCO Open Server 3 has INADDR_LOOPBACK defined in rpc/rpc.h but
+ including rpc/rpc.h breaks Solaris 6
+@@ -355,11 +350,19 @@
+ };
+ #endif
+ 
+-/* *-*-nto-qnx does not define this type in the system headers */
+-#ifdef MISSING_FD_MASK
++/* bits needed for select that may not be in the system headers */
++#ifndef HAVE_FD_MASK
+  typedef unsigned long int	fd_mask;
+ #endif
+ 
++#if defined(HAVE_DECL_NFDBITS) && HAVE_DECL_NFDBITS == 0
++# define	NFDBITS (8 * sizeof(unsigned long))
++#endif
++
++#if defined(HAVE_DECL_HOWMANY) && HAVE_DECL_HOWMANY == 0
++# define howmany(x,y)	(((x)+((y)-1))/(y))
++#endif
++
+ /* Paths */
+ 
+ #ifndef _PATH_BSHELL
+@@ -484,11 +487,6 @@
+ # define __nonnull__(x)
+ #endif
+ 
+-/* *-*-nto-qnx doesn't define this macro in the system headers */
+-#ifdef MISSING_HOWMANY
+-# define howmany(x,y)	(((x)+((y)-1))/(y))
+-#endif
+-
+ #ifndef OSSH_ALIGNBYTES
+ #define OSSH_ALIGNBYTES	(sizeof(int) - 1)
+ #endif
+
+=== modified file 'misc.c'
+--- misc.c	2013-05-31 05:56:58 +0000
++++ misc.c	2013-05-31 06:02:59 +0000
+@@ -206,16 +206,18 @@
+ 
+ 	copy->pw_name = xstrdup(pw->pw_name);
+ 	copy->pw_passwd = xstrdup(pw->pw_passwd);
++#ifdef HAVE_STRUCT_PASSWD_PW_GECOS
+ 	copy->pw_gecos = xstrdup(pw->pw_gecos);
++#endif
+ 	copy->pw_uid = pw->pw_uid;
+ 	copy->pw_gid = pw->pw_gid;
+-#ifdef HAVE_PW_EXPIRE_IN_PASSWD
++#ifdef HAVE_STRUCT_PASSWD_PW_EXPIRE
+ 	copy->pw_expire = pw->pw_expire;
+ #endif
+-#ifdef HAVE_PW_CHANGE_IN_PASSWD
++#ifdef HAVE_STRUCT_PASSWD_PW_CHANGE
+ 	copy->pw_change = pw->pw_change;
+ #endif
+-#ifdef HAVE_PW_CLASS_IN_PASSWD
++#ifdef HAVE_STRUCT_PASSWD_PW_CLASS
+ 	copy->pw_class = xstrdup(pw->pw_class);
+ #endif
+ 	copy->pw_dir = xstrdup(pw->pw_dir);
+
+=== modified file 'monitor.c'
+--- monitor.c	2013-05-31 05:56:58 +0000
++++ monitor.c	2013-05-31 06:02:59 +0000
+@@ -778,8 +778,10 @@
+ 	buffer_put_string(m, pwent, sizeof(struct passwd));
+ 	buffer_put_cstring(m, pwent->pw_name);
+ 	buffer_put_cstring(m, "*");
++#ifdef HAVE_STRUCT_PASSWD_PW_GECOS
+ 	buffer_put_cstring(m, pwent->pw_gecos);
+-#ifdef HAVE_PW_CLASS_IN_PASSWD
++#endif
++#ifdef HAVE_STRUCT_PASSWD_PW_CLASS
+ 	buffer_put_cstring(m, pwent->pw_class);
+ #endif
+ 	buffer_put_cstring(m, pwent->pw_dir);
+
+=== modified file 'monitor_wrap.c'
+--- monitor_wrap.c	2013-05-31 05:56:58 +0000
++++ monitor_wrap.c	2013-05-31 06:02:59 +0000
+@@ -259,8 +259,10 @@
+ 		fatal("%s: struct passwd size mismatch", __func__);
+ 	pw->pw_name = buffer_get_string(&m, NULL);
+ 	pw->pw_passwd = buffer_get_string(&m, NULL);
++#ifdef HAVE_STRUCT_PASSWD_PW_GECOS
+ 	pw->pw_gecos = buffer_get_string(&m, NULL);
+-#ifdef HAVE_PW_CLASS_IN_PASSWD
++#endif
++#ifdef HAVE_STRUCT_PASSWD_PW_CLASS
+ 	pw->pw_class = buffer_get_string(&m, NULL);
+ #endif
+ 	pw->pw_dir = buffer_get_string(&m, NULL);
+
+=== modified file 'openbsd-compat/bsd-misc.h'
+--- openbsd-compat/bsd-misc.h	2013-05-31 05:56:58 +0000
++++ openbsd-compat/bsd-misc.h	2013-05-31 05:59:31 +0000
+@@ -110,4 +110,8 @@
+ pid_t getpgid(pid_t);
+ #endif
+ 
++#ifndef HAVE_ENDGRENT
++# define endgrent() {}
++#endif
++
+ #endif /* _BSD_MISC_H */
+
