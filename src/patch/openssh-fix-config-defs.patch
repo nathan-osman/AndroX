@@ -1,0 +1,17 @@
+=== modified file 'config.h.in'
+--- config.h.in	2013-06-01 07:14:32 +0000
++++ config.h.in	2013-06-01 07:16:47 +0000
+@@ -1327,10 +1327,10 @@
+ #undef MISSING_FD_MASK
+ 
+ /* Define on *nto-qnx systems */
+-#undef MISSING_HOWMANY
++#undef HAVE_DECL_HOWMANY
+ 
+ /* Define on *nto-qnx systems */
+-#undef MISSING_NFDBITS
++#undef HAVE_DECL_NFDBITS
+ 
+ /* Need setpgrp to acquire controlling tty */
+ #undef NEED_SETPGRP
+

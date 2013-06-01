@@ -1,0 +1,30 @@
+=== modified file 'configure.ac'
+--- configure.ac	2013-06-01 07:14:32 +0000
++++ configure.ac	2013-06-01 20:19:19 +0000
+@@ -1523,6 +1523,7 @@
+ 	bindresvport_sa \
+ 	clock \
+ 	closefrom \
++	crypt \
+ 	dirfd \
+ 	fchmod \
+ 	fchown \
+
+=== modified file 'openbsd-compat/xcrypt.c'
+--- openbsd-compat/xcrypt.c	2013-06-01 07:14:32 +0000
++++ openbsd-compat/xcrypt.c	2013-06-01 20:19:19 +0000
+@@ -55,7 +55,12 @@
+ 
+ # if defined(HAVE_MD5_PASSWORDS) && !defined(HAVE_MD5_CRYPT)
+ #  include "md5crypt.h"
+-# endif 
++# endif
++
++# if !defined(HAVE_CRYPT)
++#  include <openssl/des.h>
++#  define crypt DES_crypt
++# endif
+ 
+ char *
+ xcrypt(const char *password, const char *salt)
+

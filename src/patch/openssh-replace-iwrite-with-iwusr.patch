@@ -1,0 +1,26 @@
+=== modified file 'scp.c'
+--- scp.c	2013-06-01 07:14:32 +0000
++++ scp.c	2013-06-01 19:50:28 +0000
+@@ -1068,7 +1068,7 @@
+ 			continue;
+ 		}
+ 		omode = mode;
+-		mode |= S_IWRITE;
++		mode |= S_IWUSR;
+ 		if ((ofd = open(np, O_WRONLY|O_CREAT, mode)) < 0) {
+ bad:			run_err("%s: %s", np, strerror(errno));
+ 			continue;
+
+=== modified file 'sftp-client.c'
+--- sftp-client.c	2013-06-01 07:14:32 +0000
++++ sftp-client.c	2013-06-01 19:56:49 +0000
+@@ -1051,7 +1051,7 @@
+ 	}
+ 
+ 	local_fd = open(local_path, O_WRONLY | O_CREAT | O_TRUNC,
+-	    mode | S_IWRITE);
++	    mode | S_IWUSR);
+ 	if (local_fd == -1) {
+ 		error("Couldn't open local file \"%s\" for writing: %s",
+ 		    local_path, strerror(errno));
+
