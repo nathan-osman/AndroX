@@ -1,0 +1,24 @@
+=== modified file 'configure.ac'
+--- configure.ac	2013-06-01 07:14:32 +0000
++++ configure.ac	2013-06-01 23:08:26 +0000
+@@ -343,7 +343,6 @@
+ 	sys/sysmacros.h \
+ 	sys/time.h \
+ 	sys/timers.h \
+-	sys/un.h \
+ 	time.h \
+ 	tmpdir.h \
+ 	ttyent.h \
+@@ -381,6 +380,11 @@
+ #include <sys/param.h>
+ ])
+ 
++# Android requires sys/socket.h to be included before sys/un.h
++AC_CHECK_HEADERS([sys/un.h], [], [], [
++#include <sys/socket.h>
++])
++
+ # Messages for features tested for in target-specific section
+ SIA_MSG="no"
+ SPC_MSG="no"
+

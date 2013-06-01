@@ -18,20 +18,21 @@ $(PACKAGE)_MD5          := 7b2d9dd75b5cf267ea1737ec75500316
 # https://bugzilla.mindrot.org/show_bug.cgi?id=2111
 # https://bugzilla.mindrot.org/show_bug.cgi?id=2112
 # https://bugzilla.mindrot.org/show_bug.cgi?id=2113
+# https://bugzilla.mindrot.org/show_bug.cgi?id=2114
 #
 # Each of these is set for inclusion (in some form) in the next release.
 
 define configure-$(PACKAGE)
 	patch -p0 <'$(SRC_DIR)/patch/$(PACKAGE)-upstream.patch'; \
 	patch -p0 <'$(SRC_DIR)/patch/$(PACKAGE)-disable-utmp-and-wtmp.patch'; \
+	patch -p0 <'$(SRC_DIR)/patch/$(PACKAGE)-include-sys-socket-before-un.patch'; \
 	autoreconf; \
 	./configure --prefix='$(INSTALL_DIR)' \
 		    --host=$(HOST) \
 		    --with-ldns='$(INSTALL_DIR)' \
-		    --with-ssl-dir='$(INSTALL_DIR)' \
-		    ac_cv_header_sys_un_h=yes
+		    --with-ssl-dir='$(INSTALL_DIR)'
 endef
 
 define build-$(PACKAGE)
-	make install
+	make
 endef
