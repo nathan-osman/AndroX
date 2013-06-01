@@ -23,11 +23,10 @@ $(PACKAGE)_MD5          := 7b2d9dd75b5cf267ea1737ec75500316
 
 define configure-$(PACKAGE)
 	patch -p0 <'$(SRC_DIR)/patch/$(PACKAGE)-upstream.patch'; \
-	patch -p0 <'$(SRC_DIR)/patch/$(PACKAGE)-fix-config-defs.patch'; \
 	patch -p0 <'$(SRC_DIR)/patch/$(PACKAGE)-disable-utmp-and-wtmp.patch'; \
 	patch -p0 <'$(SRC_DIR)/patch/$(PACKAGE)-use-openssl-crypt.patch'; \
 	patch -p0 <'$(SRC_DIR)/patch/$(PACKAGE)-replace-iwrite-with-iwusr.patch'; \
-	autoconf; \
+	autoreconf; \
 	./configure --prefix='$(INSTALL_DIR)' \
 		    --host=$(HOST) \
 		    --with-ldns='$(INSTALL_DIR)' \
