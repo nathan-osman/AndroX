@@ -1,6 +1,6 @@
 === modified file 'auth.c'
---- auth.c	2013-05-31 05:56:58 +0000
-+++ auth.c	2013-05-31 06:02:59 +0000
+--- auth.c	2013-06-01 07:14:32 +0000
++++ auth.c	2013-06-01 21:16:09 +0000
 @@ -721,10 +721,12 @@
  	fake.pw_name = "NOUSER";
  	fake.pw_passwd =
@@ -17,8 +17,8 @@
  	fake.pw_dir = "/nonexist";
 
 === modified file 'configure.ac'
---- configure.ac	2013-05-31 05:56:58 +0000
-+++ configure.ac	2013-05-31 06:03:47 +0000
+--- configure.ac	2013-06-01 07:14:32 +0000
++++ configure.ac	2013-06-01 21:16:16 +0000
 @@ -974,9 +974,6 @@
  *-*-nto-qnx*)
  	AC_DEFINE([USE_PIPES])
@@ -37,15 +37,17 @@
          AC_DEFINE([BROKEN_SETVBUF], [1], [LynxOS has broken setvbuf() implementation])
          ;;
  esac
-@@ -1524,6 +1520,7 @@
+@@ -1523,7 +1519,9 @@
+ 	bindresvport_sa \
  	clock \
  	closefrom \
++	crypt \
  	dirfd \
 +	endgrent \
  	fchmod \
  	fchown \
  	freeaddrinfo \
-@@ -1695,6 +1692,37 @@
+@@ -1695,6 +1693,37 @@
  #include <stddef.h>
  	])
  
@@ -83,7 +85,7 @@
  AC_CHECK_FUNCS([setresuid], [
  	dnl Some platorms have setresuid that isn't implemented, test for this
  	AC_MSG_CHECKING([if setresuid seems to work])
-@@ -3301,9 +3329,16 @@
+@@ -3301,9 +3330,16 @@
  OSSH_CHECK_HEADER_FOR_FIELD([ut_tv], [utmpx.h], [HAVE_TV_IN_UTMPX])
  
  AC_CHECK_MEMBERS([struct stat.st_blksize])
@@ -101,7 +103,7 @@
  #include <stdio.h>
  #if HAVE_SYS_TYPES_H
  # include <sys/types.h>
-@@ -3311,7 +3346,7 @@
+@@ -3311,7 +3347,7 @@
  #include <netinet/in.h>
  #include <arpa/nameser.h>
  #include <resolv.h>
@@ -110,7 +112,7 @@
  
  AC_CACHE_CHECK([for ss_family field in struct sockaddr_storage],
  		ac_cv_have_ss_family_in_struct_ss, [
-@@ -3341,45 +3376,6 @@
+@@ -3341,45 +3377,6 @@
  		[Fields in struct sockaddr_storage])
  fi
  
@@ -158,8 +160,8 @@
  		ac_cv_have_accrights_in_msghdr, [
 
 === modified file 'defines.h'
---- defines.h	2013-05-31 05:56:58 +0000
-+++ defines.h	2013-05-31 06:03:47 +0000
+--- defines.h	2013-06-01 07:14:32 +0000
++++ defines.h	2013-06-01 21:16:06 +0000
 @@ -171,11 +171,6 @@
  # define MAP_FAILED ((void *)-1)
  #endif
@@ -208,8 +210,8 @@
  #endif
 
 === modified file 'misc.c'
---- misc.c	2013-05-31 05:56:58 +0000
-+++ misc.c	2013-05-31 06:02:59 +0000
+--- misc.c	2013-06-01 07:14:32 +0000
++++ misc.c	2013-06-01 21:16:09 +0000
 @@ -206,16 +206,18 @@
  
  	copy->pw_name = xstrdup(pw->pw_name);
@@ -234,8 +236,8 @@
  	copy->pw_dir = xstrdup(pw->pw_dir);
 
 === modified file 'monitor.c'
---- monitor.c	2013-05-31 05:56:58 +0000
-+++ monitor.c	2013-05-31 06:02:59 +0000
+--- monitor.c	2013-06-01 07:14:32 +0000
++++ monitor.c	2013-06-01 21:16:09 +0000
 @@ -778,8 +778,10 @@
  	buffer_put_string(m, pwent, sizeof(struct passwd));
  	buffer_put_cstring(m, pwent->pw_name);
@@ -250,8 +252,8 @@
  	buffer_put_cstring(m, pwent->pw_dir);
 
 === modified file 'monitor_wrap.c'
---- monitor_wrap.c	2013-05-31 05:56:58 +0000
-+++ monitor_wrap.c	2013-05-31 06:02:59 +0000
+--- monitor_wrap.c	2013-06-01 07:14:32 +0000
++++ monitor_wrap.c	2013-06-01 21:16:09 +0000
 @@ -259,8 +259,10 @@
  		fatal("%s: struct passwd size mismatch", __func__);
  	pw->pw_name = buffer_get_string(&m, NULL);
@@ -266,8 +268,8 @@
  	pw->pw_dir = buffer_get_string(&m, NULL);
 
 === modified file 'openbsd-compat/bsd-misc.h'
---- openbsd-compat/bsd-misc.h	2013-05-31 05:56:58 +0000
-+++ openbsd-compat/bsd-misc.h	2013-05-31 05:59:31 +0000
+--- openbsd-compat/bsd-misc.h	2013-06-01 07:14:32 +0000
++++ openbsd-compat/bsd-misc.h	2013-06-01 21:16:13 +0000
 @@ -110,4 +110,8 @@
  pid_t getpgid(pid_t);
  #endif
@@ -277,4 +279,48 @@
 +#endif
 +
  #endif /* _BSD_MISC_H */
+
+=== modified file 'openbsd-compat/xcrypt.c'
+--- openbsd-compat/xcrypt.c	2013-06-01 07:14:32 +0000
++++ openbsd-compat/xcrypt.c	2013-06-01 21:16:16 +0000
+@@ -55,7 +55,12 @@
+ 
+ # if defined(HAVE_MD5_PASSWORDS) && !defined(HAVE_MD5_CRYPT)
+ #  include "md5crypt.h"
+-# endif 
++# endif
++
++# if !defined(HAVE_CRYPT)
++#  include <openssl/des.h>
++#  define crypt DES_crypt
++# endif
+ 
+ char *
+ xcrypt(const char *password, const char *salt)
+
+=== modified file 'scp.c'
+--- scp.c	2013-06-01 07:14:32 +0000
++++ scp.c	2013-06-01 21:16:18 +0000
+@@ -1068,7 +1068,7 @@
+ 			continue;
+ 		}
+ 		omode = mode;
+-		mode |= S_IWRITE;
++		mode |= S_IWUSR;
+ 		if ((ofd = open(np, O_WRONLY|O_CREAT, mode)) < 0) {
+ bad:			run_err("%s: %s", np, strerror(errno));
+ 			continue;
+
+=== modified file 'sftp-client.c'
+--- sftp-client.c	2013-06-01 07:14:32 +0000
++++ sftp-client.c	2013-06-01 21:16:18 +0000
+@@ -1051,7 +1051,7 @@
+ 	}
+ 
+ 	local_fd = open(local_path, O_WRONLY | O_CREAT | O_TRUNC,
+-	    mode | S_IWRITE);
++	    mode | S_IWUSR);
+ 	if (local_fd == -1) {
+ 		error("Couldn't open local file \"%s\" for writing: %s",
+ 		    local_path, strerror(errno));
 
